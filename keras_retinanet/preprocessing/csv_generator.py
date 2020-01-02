@@ -21,11 +21,10 @@ from ..utils.image import read_image_bgr
 import numpy as np
 from PIL import Image
 from six import raise_from
-
+import cv2
 import csv
 import sys
 import os.path
-from collections import OrderedDict
 
 
 def _parse(value, function, fmt):
@@ -45,7 +44,7 @@ def _parse(value, function, fmt):
 def _read_classes(csv_reader):
     """ Parse the classes file given by csv_reader.
     """
-    result = OrderedDict()
+    result = {}
     for line, row in enumerate(csv_reader):
         line += 1
 
@@ -64,7 +63,7 @@ def _read_classes(csv_reader):
 def _read_annotations(csv_reader, classes):
     """ Read annotations from the csv_reader.
     """
-    result = OrderedDict()
+    result = {}
     for line, row in enumerate(csv_reader):
         line += 1
 
@@ -202,10 +201,65 @@ class CSVGenerator(Generator):
         image = Image.open(self.image_path(image_index))
         return float(image.width) / float(image.height)
 
-    def load_image(self, image_index):
+    def load_image(self, image_index,k=5):
         """ Load an image at the image_index.
         """
-        return read_image_bgr(self.image_path(image_index))
+        img_path = self.image_names[image_index]
+        """
+        
+        for i in range(k//2):
+            i1 =i+1
+            setattr(sys.modules[__name__], 'image_index%s' % i1, image_index-(i1))
+        for i in range(k//2):
+            i2 = (k-1)-i
+            setattr(sys.modules[__name__], 'image_index%s' % i2, image_index+(i+1))
+        """
+            
+        if  img_path[-6:] == '01.jpg':
+            image_index1 = image_index
+            image_index2 = image_index
+            image_index3 = image_index+2
+            image_index4 = image_index+1
+        elif  img_path[-6:] == '02.jpg':
+            image_index1 = image_index-1
+            image_index2 = image_index-1
+            image_index3 = image_index+2
+            image_index4 = image_index+1
+        elif img_path[-6:] == '25.jpg':
+            image_index1 = image_index-1
+            image_index2 = image_index-2
+            image_index3 = image_index
+            image_index4 = image_index
+        elif img_path[-6:] == '24.jpg':
+            image_index1 = image_index-1
+            image_index2 = image_index-2
+            image_index3 = image_index+1
+            image_index4 = image_index+1
+        else:
+            image_index1 = image_index-1
+            image_index2 = image_index-2
+            image_index3 = image_index+2
+            image_index4 = image_index+1
+
+        image1=read_image_bgr(self.image_path(image_index))
+        image2=read_image_bgr(self.image_path(image_index1))
+        image3=read_image_bgr(self.image_path(image_index2))
+        image4=read_image_bgr(self.image_path(image_index4))
+        image5=read_image_bgr(self.image_path(image_index3))
+        gray1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
+        gray2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
+        gray3 = cv2.cvtColor(image3, cv2.COLOR_BGR2GRAY)
+        gray4 = cv2.cvtColor(image4, cv2.COLOR_BGR2GRAY)
+        gray5 = cv2.cvtColor(image5, cv2.COLOR_BGR2GRAY)
+        img = np.zeros((576,768,k))
+        img[:,:,0]= gray3
+        img[:,:,1]= gray2
+        img[:,:,2]= gray1
+        img[:,:,3]= gray4
+        img[:,:,4]= gray5
+        
+        return img
+
 
     def load_annotations(self, image_index):
         """ Load annotations for an image_index.
